@@ -1,0 +1,82 @@
+---
+title: "Tree Rings"
+author: "Medelin Kant"
+date: "10/12/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Libraries
+```{r}
+library(dplR)
+```
+
+Reading Tree Ring Data
+```{r}
+# read data
+PSMEcores <- read.rwl('MCores.rwl')
+# how many years and series there are
+dim(PSMEcores)
+# the series IDs
+colnames(PSMEcores)
+# first few years
+head(rownames(PSMEcores))
+# the class should be "rwl" and "data.frame"
+class(PSMEcores)
+```
+
+Describing and Plotting Ring-Width Data
+```{r}
+rwl.report(PSMEcores)
+#spaghetti plot
+plot(PSMEcores, plot.type="spag")
+```
+
+
+Detrending Ring Widths to RWI
+```{r}
+PSMEcores.rwi <- detrend(rwl = PSMEcores, method = "ModNegExp")
+# check to see that both data.frames have same dimensions after standardization 
+dim(PSMEcores)
+dim(PSMEcores.rwi)
+# "ar1" = first-order autocorrelation 
+rwi.stats(PSMEcores.rwi)
+```
+
+
+Descriptive Statistics 
+```{r}
+#raw ring width stats
+rwl.stats(PSMEcores)
+# RWI stats
+rwl.stats(PSMEcores.rwi)
+
+# Interseries function gives the measure of average interseries correlation that is different fron the rbar measurements from rwi.stats. Correlations are calculated serially between each tree-ring series and a master chronology built from all the other series in the rwl object. 
+PSMEcores.rho <- interseries.cor(PSMEcores.rwi, prewhiten=TRUE, method="spearman")
+
+# for all 20 series
+PSMEcores.rho[1:20, ]
+
+#mean for all series
+mean(PSMEcores.rho[, 1])
+```
+
+Building a Mean Value Chronology 
+
+```{r} 
+# after detrending, build a chronology by averaging across the years of the rwi object. "chron" uses Tukey's biweight robust mean (average that is unaffected by outliers)
+PSMEcores.crn <- chron(PSMEcores.rwi, prefix= "CAM")
+
+# This object has the same number of rows as rwi object. dimensions are chronology first and sample depth (number of series abailbale in that year) second. 
+dim(PSMEcores.rwi)
+dim(PSMEcores.crn) 
+
+#chronology plot with smoothing spline added
+plot(PSMEcores.crn, add.spline=TRUE, nyrs=20)
+```
