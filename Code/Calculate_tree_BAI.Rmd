@@ -1,0 +1,83 @@
+---
+title: "tree ring measurements for BAI caclulation"
+author: "KMJ"
+date: "created October, 2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+##########################################################################################################################
+
+###############                 calculate BAI for early and latewood using loop            ######################
+```{r}
+
+library(ggplot2)
+
+# read in file with tree radius (excluding bark)
+# read in file with early and latewood ring widths
+
+ba<- read.csv("tree_radius.csv")
+early<- read.csv("early_ringwidth.csv")
+late<- read.csv("late_ringwidth.csv")
+
+### find BAI for early and latewood growth
+treeID = ba$treeID
+alldat<-NULL
+
+#Loop through the individual trees
+for(i in 1:length(treeID)){
+  
+  #Pull out tree i's outer radius and basal area
+  rad_out = ba$rad_out_mm[which(ba$treeID==treeID[i])]
+  
+  #Pull out tree i in ring width series data set
+  late.i = late[which(late$treeID == treeID[i]),]
+  early.i = early[which(early$treeID == treeID[i]),]
+  
+  ## list and sort the growth years for tree i
+  growthyr = sort(late.i$year, decreasing = T)
+
+  #data frame to store output in
+  dat.i = data.frame(growthyr = growthyr,id = treeID[i], late = NA, early = NA)
+
+#Loop through the individual years   
+for (s in 1:length(growthyr)){
+  
+  rad_out_lw = rad_out
+  #Pull out the latewood ring width and subtract from the outer radius for latewood to get the inner radius of latewood
+  rad_in_lw = rad_out - late.i$width_mm[which(late.i$year == growthyr[s])]
+  
+  ## out radius for earlywood become the inner radius for latewood
+  rad_out_ew = rad_in_lw
+  #Pull out the earlywood ring width and subtract from the outer radius for earlywood to get the inner radius of earlywood
+  rad_in_ew = rad_out_ew - early.i$width_mm[which(early.i$year == growthyr[s])]
+  
+  
+  #Calculate the basal area increment for latewood and add to dataset
+  dat.i$late[s] = pi*rad_out_lw^2 - pi*rad_in_lw^2
+  #Calculate the basal area increment for earlywood and add to data set
+  dat.i$early[s] = pi*rad_out_ew^2 - pi*rad_in_ew^2
+  
+  
+  #Set current radius and basal area as rad_out and ba_out for next iteration
+  rad_out = rad_in_ew
+
+}
+  alldat<-rbind(alldat, dat.i)
+}
+
+# get total BAI (early + latewood)
+alldat$total<-alldat$early+alldat$late
+
+# plot BAI time series
+ggplot(alldat, aes(x=growthyr, y=late, color=id))+
+  geom_line()+
+  geom_point()+
+  theme_bw()+
+  xlab('Year')+
+  labs(y=expression(BAI~(mm^{2})))+
+  theme(legend.position = "none")
+
+```
