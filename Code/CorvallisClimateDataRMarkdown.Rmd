@@ -1,0 +1,98 @@
+---
+title: "Corvallis Climate"
+author: "Medelin Kant"
+date: "10/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(hrbrthemes)
+```
+Converting characters to dates
+```{r, results='hide'}
+#read data file
+MDClimate <- read.csv("ClimateData_wDates.csv")
+head(MDClimate)
+dates <- MDClimate$Date
+head(dates)
+str(dates)
+#convert dates from character class to dates class
+ConvertedDate <- as.Date(dates)
+#check to see if it worked
+class(ConvertedDate)
+```
+
+Monthly Precipitation 1953-2021
+```{r}
+str(MDClimate)
+PRCP <- MDClimate$PRCP
+
+p <- MDClimate %>%
+ggplot( aes(x=ConvertedDate, y=PRCP)) +
+    geom_area(fill="#69b3a2", alpha=0.5) +
+    geom_line(color="#69b3a2") +
+    ylab("precipitation (in)") +
+  xlab("January 1953 - July 2021") +
+    theme_ipsum()
+
+p <- ggplotly(p)
+p
+```
+
+Monthly Average Temperature
+```{r}
+str(MDClimate)
+
+TAVG <- MDClimate$TAVG
+
+q <- MDClimate %>%
+ggplot( aes(x=ConvertedDate, y=TAVG)) +
+    geom_line(color="indianred4") +
+    ylab("Average Temperature (F)") +
+  xlab("January 1953 - July 2021") +
+    theme_ipsum()
+
+q <- ggplotly(q)
+q
+```
+
+
+Monthly Minimum Temperature 
+```{r}
+str(MDClimate)
+
+TMIN <- MDClimate$TMIN
+
+q <- MDClimate %>%
+ggplot( aes(x=ConvertedDate, y=TMIN)) +
+    geom_line(color="midnightblue") +
+    ylab("Minimum Temperature (F)") +
+  xlab("January 1953 - July 2021") +
+    theme_ipsum()
+
+q <- ggplotly(q)
+q
+```
+
+Monthly Maximum Temperatute 
+```{r}
+TMAX <- MDClimate$TMAX
+
+x <- MDClimate %>%
+ggplot( aes(x=ConvertedDate, y=TMAX)) +
+    geom_line(color="sienna1") +
+    ylab("Maximum Temperature (F)") +
+  xlab("January 1953 - July 2021") +
+    theme_ipsum()
+
+x <- ggplotly(x)
+x
+```
