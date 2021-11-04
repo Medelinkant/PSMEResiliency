@@ -1,0 +1,144 @@
+---
+title: "Corvallis Climate"
+author: "Medelin Kant"
+date: "10/11/2021"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(hrbrthemes)
+library(patchwork)
+library(dplR)
+library(stats)
+library(utils)
+```
+Converting characters to dates
+```{r, results='hide'}
+#read data file
+MDClimate <- read.csv("ClimateData_wDates.csv")
+head(MDClimate)
+dates <- MDClimate$Date
+head(dates)
+str(dates)
+#convert dates from character class to dates class
+ConvertedDate <- as.Date(dates)
+#check to see if it worked
+class(ConvertedDate)
+```
+
+Monthly Precipitation 1953-2021
+```{r}
+str(MDClimate)
+PRCP <- MDClimate$PRCP
+
+p <- MDClimate %>%
+ggplot( aes(x=ConvertedDate, y=PRCP)) +
+    geom_area(fill="#69b3a2", alpha=0.5) +
+    geom_line(color="#69b3a2") +
+    ylab("precipitation (in)") +
+  xlab("January 1953 - July 2021") +
+    theme_ipsum()
+
+p <- ggplotly(p)
+p
+```
+
+Monthly Average Temperature
+```{r}
+str(MDClimate)
+
+TAVG <- MDClimate$TAVG
+
+q <- MDClimate %>%
+ggplot( aes(x=ConvertedDate, y=TAVG)) +
+    geom_line(color="indianred4") +
+    ylab("Average Temperature (F)") +
+  xlab("January 1953 - July 2021") +
+    theme_ipsum()
+
+q <- ggplotly(q)
+q
+```
+
+
+Monthly Minimum Temperature 
+```{r}
+str(MDClimate)
+
+TMIN <- MDClimate$TMIN
+
+q <- MDClimate %>%
+ggplot( aes(x=ConvertedDate, y=TMIN)) +
+    geom_line(color="midnightblue") +
+    ylab("Minimum Temperature (F)") +
+  xlab("January 1953 - July 2021") +
+    theme_ipsum()
+
+q <- ggplotly(q)
+q
+
+
+```
+
+Monthly Maximum Temperatute 
+```{r}
+TMAX <- MDClimate$TMAX
+
+x <- MDClimate %>%
+ggplot( aes(x=ConvertedDate, y=TMAX)) +
+    geom_line(color="sienna1") +
+    ylab("Maximum Temperature (F)") +
+  xlab("January 1953 - July 2021") +
+    theme_ipsum()
+
+x <- ggplotly(x)
+x
+```
+# Time series with climate data and RWI 
+
+p1 <- ggplot(MDClimate, aes(x=ConvertedDate, y=PRCP)) +
+  geom_line(color="#69b3a2", size=2) +
+  ggtitle("Precipitation") +
+  theme_ipsum()
+  
+p1
+
+PSMEcores <- read.rwl('MCores.rwl')
+PSMEcores.rwi <- detrend(rwl = PSMEcores, method = "ModNegExp")
+
+PSMEcores.rwi
+
+Site1.rwi <- PSMEcores.rwi[c(1:68),c(1, 4:5, 7, 9, 12, 16:17, 19:20)]
+Site2.rwi <- PSMEcores.rwi[c(1:68),c(2:3,6, 8, 10:11, 13:15,18)]
+Live.rwi <- PSMEcores.rwi[c(1:68), c(1:3, 5, 7:8, 11:13, 16)]
+Dead.rwi <- PSMEcores.rwi[c(1:68), c(4, 6, 9:10, 14:15, 17:20)]
+
+PSMEcores.crn <- chron(PSMEcores.rwi, prefix = "PSM")
+PSMEcores.crn
+
+Site1.crn <- chron(Site1.rwi, prefix ="S1")
+Site2.crn <- chron(Site2.rwi, prefix ="S2")
+Live.crn <- chron(Live.rwi, prefix = "L")
+Dead.crn <- chron(Dead.rwi, prefix = "D")
+
+Years <- PSMEcores.crn[c(1:68), c(1)]
+PSMstd <- PSMEcores.crn[c(1:68), c(2)]
+
+ggplot(PSMEcores.crn, aes(x=Years, y=PSMstd)) +
+  geom_line(color="grey",size=2) +
+  ggtitle("RWI") +
+  theme_ipsum()
+  
+p2
+
