@@ -1,0 +1,157 @@
+---
+title: "Tree Rings"
+author: "Medelin Kant"
+date: "10/12/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Libraries
+```{r}
+library(dplR)
+library(stats)
+library(utils)
+library(ggplot2)
+```
+
+Reading Tree Ring Data
+```{r}
+# read data
+PSMEcores <- read.rwl('MCores.rwl')
+# how many years and series there are
+dim(PSMEcores)
+# the series IDs
+colnames(PSMEcores)
+# first few years
+head(rownames(PSMEcores))
+# the class should be "rwl" and "data.frame"
+class(PSMEcores)
+
+```
+
+Describing and Plotting Ring-Width Data
+```{r}
+rwl.report(PSMEcores)
+Site1 <- PSMEcores[c(1:68),c(1, 4:5, 7, 9, 12, 16:17, 19:20)]
+Site2 <- PSMEcores[c(1:68),c(2:3,6, 8, 10:11, 13:15,18)]
+Years <- PSMEcores[c(1:68), c(1)]
+PSMEcores
+#spaghetti plot
+plot(PSMEcores, plot.type="spag")
+spag.plot(Site1, zfac = 1, useRaster = FALSE, res = 150)
+spag.plot(Site2, zfac = 1, useRaster = FALSE, res = 150)
+plot(Site1, plot.type="spag")
+plot(Site2, plot.type="spag")
+
+```
+
+
+Detrending Ring Widths to RWI
+```{r}
+PSMEcores.rwi <- detrend(rwl = PSMEcores, method = "ModNegExp")
+# check to see that both data.frames have same dimensions after standardization 
+dim(PSMEcores)
+dim(PSMEcores.rwi)
+head(PSMEcores.rwi)
+PSMEcores.rwi
+
+# "ar1" = first-order autocorrelation 
+rwi.stats(PSMEcores.rwi)
+
+Site1.rwi <- PSMEcores.rwi[c(1:68),c(1, 4:5, 7, 9, 12, 16:17, 19:20)]
+Site2.rwi <- PSMEcores.rwi[c(1:68),c(2:3,6, 8, 10:11, 13:15,18)]
+Live.rwi <- PSMEcores.rwi[c(1:68), c(1:3, 5, 7:8, 11:13, 16)]
+Dead.rwi <- PSMEcores.rwi[c(1:68), c(4, 6, 9:10, 14:15, 17:20)]
+
+S1Live.rwi <- PSMEcores.rwi[c(1:68), c(1, 5, 7, 12, 16)]
+S1Dead.rwi <- PSMEcores.rwi[c(1:68), c(4, 9, 17, 19:20)]
+
+S2Live.rwi <- PSMEcores.rwi[c(1:68), c(2:3, 8, 11, 13)]
+S2Dead.rwi <- PSMEcores.rwi[c(1:68), c(6,10, 14:15, 18)]
+```
+
+
+Descriptive Statistics 
+```{r}
+#raw ring width stats
+rwl.stats(PSMEcores)
+# RWI stats
+rwl.stats(PSMEcores.rwi)
+
+# Interseries function gives the measure of average interseries correlation that is different fron the rbar measurements from rwi.stats. Correlations are calculated serially between each tree-ring series and a master chronology built from all the other series in the rwl object. 
+PSMEcores.rho <- interseries.cor(PSMEcores.rwi, prewhiten=TRUE, method="spearman")
+
+# for all 20 series
+PSMEcores.rho[1:20, ]
+
+#mean for all series
+MeanRWI <- mean(PSMEcores.rho[, 1])
+
+
+PSMEcores.crn <- chron(PSMEcores.rwi, prefix = "PSM")
+Site1.crn <- chron(Site1.rwi, prefix ="S1")
+Site2.crn <- chron(Site2.rwi, prefix ="S2")
+Live.crn <- chron(Live.rwi, prefix = "L")
+Dead.crn <- chron(Dead.rwi, prefix = "D")
+S1Live.crn <- chron(S1Live.rwi, prefix = "S1L")
+S1Dead.crn <- chron(S1Dead.rwi, prefix = "S1D")
+S2Live.crn <- chron(S2Live.rwi, prefix = "S2L")
+S2Dead.crn <- chron(S2Dead.rwi, prefix = 'S2D')
+
+View(PSMEcores.crn)
+
+
+plot(PSMEcores.crn, xlab='Year', ylab='RWI')
+plot(Site1.crn, xlab='Year', ylab='RWI')
+plot(Site2.crn, xlab='Year', ylab='RWI')
+plot(Live.crn, xlab='Year', ylab='RWI')
+plot(Dead.crn, xlab='Year', ylab='RWI')
+
+plot(S1Live.crn, xlab='Year', ylab='RWI', ylim=c(0.4, 1.7))
+plot(S1Dead.crn, xlab='Year', ylab='RWI', ylim=c(0.4, 1.7))
+plot(S2Live.crn, xlab='Year', ylab='RWI'
+plot(S2Dead.crn, xlab='Year', ylab='RWI')
+
+```
+
+Building a Mean Value Chronology 
+```{r} 
+# after detrending, build a chronology by averaging across the years of the rwi object. "chron" uses Tukey's biweight robust mean (average that is unaffected by outliers)
+PSMEcores.crn <- chron(PSMEcores.rwi, prefix= "CAM")
+
+# This object has the same number of rows as rwi object. dimensions are chronology first and sample depth (number of series abailbale in that year) second. 
+dim(PSMEcores.rwi)
+dim(PSMEcores.crn) 
+
+#chronology plot with smoothing spline added
+plot(PSMEcores.crn, add.spline=TRUE, nyrs=20)
+```
+
+
+BAI 
+
+BAI.in <- bai.in(rwl=PSMEcores)
+summary(BAI.in)
+
+BAI.out <- bai.out(rwl = PSMEcores)
+summary(BAI.out)
+
+data(MCores.rwl)
+
+data(PSMEcores)
+
+data(MCores.d2pith)
+foo <- bai.in(rwl = gp.rwl, d2pith = gp.d2pith)
+foo.crn <- chron(foo)
+yrs <- time(foo.crn)
+plot(yrs, foo.crn[, 1], type = "n",
+     xlab = "Year", ylab = expression(mm^2))
+lines(yrs, foo.crn[, 1], col = "grey", lty = "dashed")
+lines(yrs, ffcsaps(foo.crn[, 1], nyrs = 32), col = "red", lwd = 2)
+
